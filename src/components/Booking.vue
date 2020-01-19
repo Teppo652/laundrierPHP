@@ -18,6 +18,7 @@
           slots: {{ slots }}<br><br>
           bookings: {{ bookings }}<br><br>
           calendarDates: {{ calendarDates }}<br>          
+          currentHour: {{ currentHour }}
           </div>
 
           <h3 class="title">Laundry room booking 
@@ -27,6 +28,9 @@
               </span>
             </button>
           </h3>
+          <div v-if="house.adminUserId == user.id"> 
+            Tenant registration code: {{ house.registrationCode }}
+          </div>
 
           <div class="columns is-centered">
             <div class="column is-5 is-5-desktop">              
@@ -50,9 +54,9 @@
 <!-- TODO add Texts: This week, next week with divider -->
                  <div class="tags wide">
                   <span v-for="b in bookings" :key="b.id"
-                          v-show="b.userId == user.id"
-                          :text="dispDate = getSingleDaysInfo(b.date, true)"
-                          class="tag is-warning is-medium is-fullwidth bookingTag" 
+                          v-show="b.userId == user.id && b.startTime >= currentHour"
+                          :text="dispDate = getSingleDaysInfo('20'+b.date, true)"
+                          class="tag is-medium is-fullwidth bookingTag is-warning"
                   >{{ dispDate }} &nbsp; <i class="far fa-clock"></i> &nbsp;{{ String(b.startTime).padStart(2, '0') }}:00 <span v-if="!house.noMachines" class="machineName">{{ machines.find(m => m.id == b.machineId).name }}</span>
                   <button v-on:click.prevent="deleteBooking(b.id)" class="delete is-small"></button>                  
                   </span>
@@ -60,12 +64,20 @@
                 <p v-if="totBookings == 0" class="has-text-white-bis">You have no bookings, click plus button to make them.</p>
                 
                 <!-- error message -->
-                <div v-show="errorMsg != ''"  class="notification is-danger">
+                <div v-show="errorMsg != ''" class="notification is-danger">
                   <button v-on:click.prevent="errorMsg = ''" class="delete"></button>
                   <strong>{{ errorMsg }}</strong>
                 </div>
 
-                <!-- add booking section -->
+                
+                  
+                  Color legend<br>
+                  <span class="tag is-warning is-normal">Booked to you</span> &nbsp;
+                  <span class="tag is-primary is-normal">Free</span> &nbsp;
+                  <span class="tag is-danger  is-normal">Booked to somebody else</span>
+                  <br><br>
+
+                <!-- add a new booking -section -->
                 <section v-show="showBookingPanel">
                   <p class="subtitle is-3">Add booking</p>
                   <div class="field">
@@ -82,7 +94,7 @@
                     </div>
                   </div>     
 
-                  <div v-show="!house.noMachines" class="field">
+                  <div v-if="!house.noMachines" class="field">
                     <div class="select is-fullwidth">
                       <!-- machine droplist -->
                       <select v-on:change="selectedMachine = $event.target.value">
@@ -96,28 +108,46 @@
                     </div>
                   </div><br>
 <!-- TODO add button/checkbox: Show only available times -->
-                  
-                  Color legend<br>
-                  <span class="tag is-warning is-normal">Booked to you</span> &nbsp;
-                  <span class="tag is-primary is-normal">Free</span> &nbsp;
-                  <span class="tag is-danger  is-normal">Booked to somebody else</span>
-                  <br>user.id: {{ user.id }}<br>
-                  selectedDay: {{ selectedDay }}
                   <div class="buttons">
-                    <!--<span v-for="m in machines"  :key="m" v-show="selectedMachine == -1 || m.id == selectedMachine"> -->
+                    <!-- NEW 
                     <span v-for="(m, index) in machines" :key="index" :value="m.id" v-show="selectedMachine == -1 || m.id == selectedMachine">
                         <p v-if="!house.noMachines" class="subtitle is-3">{{ m.name }}</p>
                         <p v-else class="subtitle is-3">Laundry room</p>
                         Click to book a time<br>
                         
-                        <!-- iterate time slots       machineId, date, startTime-->
+                        <!-- iterate time slots 
+                        <span v-for="s in slots" :key="s" :value="s">
+                          <span v-for="b in bookings" :key="b" :value="b">
+                            <button v-if="b.date == selectedDay && b.startTime == s && b.machineId == m.id" class="button"                         
+                              v-bind:class="user.id == b.userId ? 'is-warning' : 'is-danger'"
+                              disabled>
+                              <i class="far fa-clock"></i> &nbsp; {{ String(s).padStart(2, '0') }}:00 - {{ String(parseInt(s) + parseInt(house.slotLength)).padStart(2, '0') }}:00 
+                              <span v-if="b.aptNumber || b.name">Apt:{{ b.aptNumber }} N:{{ b.name }}</span>
+                            </button>
+                          <button v-if="!(b.date == selectedDay && b.startTime == s && b.machineId == m.id)" 
+                              class="button is-primary" v-on:click.prevent="saveBooking(m.id, parseInt(selectedDay), s)">
+                            <i class="far fa-clock"></i> &nbsp; {{ String(s).padStart(2, '0') }}:00 - {{ String(parseInt(s) + parseInt(house.slotLength)).padStart(2, '0') }}:00 
+                          </button>
+                          
+                          </span> 
+                          </span>
+                    </span> <!-- end machines -->  
+
+
+                    <!-- OLD -->
+                    <!--<span v-for="m in machines"  :key="m" v-show="selectedMachine == -1 || m.id == selectedMachine"> -->                      
+                    <span v-for="(m, index) in machines" :key="index" :value="m.id"> <!-- v-show="selectedMachine == -1 || m.id == selectedMachine"> -->
+                        <p v-if="!house.noMachines" class="subtitle is-3">{{ m.name }}</p>
+                        Click to book a time<br>
+                        
+                        <!-- iterate time slots -->
                         <button v-for="s in slots" :key="s" :value="s"
                             class="button"                         
                             v-bind:class="[ bookings.find(b => b.date == selectedDay && b.startTime == s && b.machineId == m.id && user.id == b.userId)
-                                            ? 'button is-warning'
-                                            : (bookings.find(b => b.date == selectedDay && b.startTime == s && b.machineId == m.id) 
-                                                ? 'button is-danger'
-                                                : 'button is-primary')]"
+                                              ? 'button is-warning'
+                                              : (bookings.find(b => b.date == selectedDay && b.startTime == s && b.machineId == m.id) 
+                                                  ? 'button is-danger'
+                                                  : 'button is-primary')]"
                             :disabled="bookings.find(b => b.date == selectedDay && b.startTime == s && b.machineId == m.id)"
                             v-on:click.prevent="saveBooking(m.id, parseInt(selectedDay), s)"
                             > 
@@ -125,8 +155,16 @@
                                  v-on:click.prevent="saveBooking(user.id, parseInt(selectedDay), s, m.id)"
                             -->
                             <i class="far fa-clock"></i> &nbsp; {{ String(s).padStart(2, '0') }}:00 - {{ String(parseInt(s) + parseInt(house.slotLength)).padStart(2, '0') }}:00 
-              
+                            <!--
+                            <span v-if="bookings.find(b => b.date == selectedDay && b.startTime == s && b.machineId == m.id)">
+                              &nbsp;&nbsp;<span style="float:right">{{ bookings.find(b => b.date == selectedDay && b.startTime == s && b.machineId == m.id).aptNumber }}
+                              
+                              </span>
+                            </span> --> <!--&& (b.aptNumber || b.name">Apt:{{ b.aptNumber }} N:{{ b.name }}-->
                             <br>
+                             <!--                          
+                            <span v-if="house.visibleUserInfo == 1"> apt {{ b.aptNumber }}</span>
+                            <span v-if="house.visibleUserInfo == 2"> N: {{ b.name }}</span> -->
                         </button> 
                     </span> <!-- end machines -->                    
                   </div>
@@ -159,7 +197,8 @@ export default {
       selectedDay: null,
       selectedMachine: "-1",
       weekdays: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat','Today','Tomorrow','The day after tomorrow'],
-      totBookings: 0
+      totBookings: 0,
+      currentHour: null
     }
   },
   methods: {
@@ -190,8 +229,8 @@ export default {
                       counter++;
                   }
               }
-              this.machines = newMachines;
           }
+          this.machines = newMachines;
     },
     getCalendarDates: function (getTodaysValueOnly=false, getDisplayDate=false) {
       // returns dates of next 1-8 weeks
@@ -202,13 +241,14 @@ export default {
         day.setDate(day.getDate() + d);
         let dd = String(day.getDate()).padStart(2, '0');
         let mm = String(day.getMonth() + 1).padStart(2, '0');
-        let yyyy = day.getFullYear();        
-        if(getTodaysValueOnly) { return yyyy + mm + dd; }
+        let yy = String(day.getFullYear());
+        yy = yy.substr(0, 2);
+        if(getTodaysValueOnly) { return yy + mm + dd; }
         let dayNum = day.getDay();   
         while(dayNum>6) { dayNum-=7; } 
         let displayDate = day.toLocaleDateString();  
-        if(d == 0) { this.selectedDay = yyyy + mm + dd; dayNum = 7; }
-        tempCalendarDates.push({ id: yyyy + mm + dd, dayNum: dayNum, disp: displayDate });
+        if(d == 0) { this.selectedDay = yy + mm + dd; dayNum = 7; }
+        tempCalendarDates.push({ id: yy + mm + dd, dayNum: dayNum, disp: displayDate });
       }        
       this.calendarDates = tempCalendarDates;
     },
@@ -224,6 +264,14 @@ export default {
       if(index >= 0 && index <= 2) return this.weekdays[index+7];
       return this.weekdays[dayNum];
     },
+    getBookerInfo: function(userId) { 
+      return bookings.find(b => b.userId == userId).aptNumber;
+      /*
+      let bookings = this.bookings;
+      let isFound = bookings.reduce(function (n, b) {
+        return (b.userId == userId).name;
+      }, 0); */
+    },
     saveBooking: function(machineId, date, startTime) {
       if(parseInt(this.totBookings)<parseInt(this.house.maxBookingsPerUser)) {
         this.addBooking({
@@ -234,49 +282,23 @@ export default {
           "startTime": startTime,
           "name": this.user.name,
           "aptNumber": this.user.aptNumber
-        });     
+        });        
       } else {
         this.errorMsg = 'Note: You can have a max ' + this.house.maxBookingsPerUser + ' bookings';
       }
     },
     deleteBooking: function (bookingId) {
-        //if(confirm ('Are you sure you want to delete?')) {          
+      if(confirm ('Are you sure you want to delete?')) {  
+          console.log('deleteBooking - bookingId: ', bookingId);
         this.removeBooking({ "id": bookingId });
         this.getBookings([this.user.houseId]);
-        //} 
+      } 
     },
     ...mapActions(["getBookings", "addBooking", "removeBooking"])
   }, // end methods 
-  /*
-  watch: {
-          user:function() {            
-            console.log('this.user.id: ', this.user.id);
-          },
-          house:function() {
-            //if(this.house != null) {
-                console.log('house loaded');
-              this.createSlotArray(parseInt(this.house.slotStart), parseInt(this.house.slotEnd), parseInt(this.house.slotLength));
-              if(this.house.noMachines == 0) { this.house.noMachines = false; }
-              this.getMachines();
-              this.getCalendarDates(); 
-              this.getBookings([this.user.houseId]);
-            //} else {
-            //    console.log('error - could not be loaded');
-            //}
-            
-          //  if (this.house === undefined || this.house.length == 0) { 
-          //    console.log('error, house could not be loaded');
-          //  } else {
-          //      console.log('house loaded');
-          //    this.createSlotArray(parseInt(this.house.slotStart), parseInt(this.house.slotEnd), parseInt(this.house.slotLength));
-          //    if(this.house.noMachines == 0) { this.house.noMachines = false; }
-          //    this.getMachines();
-          //    this.getCalendarDates(); 
-          //    this.getBookings([this.user.houseId]);
-          //  }
-          }
-  }, */
-  created() {
+  mounted() {
+    var date = new Date();
+    this.currentHour = date.getHours();    
     this.createSlotArray(parseInt(this.house.slotStart), parseInt(this.house.slotEnd), parseInt(this.house.slotLength));
     if(this.house.noMachines == 0) { this.house.noMachines = false; }
     this.getMachines();
@@ -291,13 +313,10 @@ export default {
       while (value.length < (2 || 2)) {value = "0" + value;}   
       return value;
     } 
-  }, 
+  },
   computed: mapGetters(["bookings", "user", "house"])
 };
 </script>
 
 <style scoped>
-  .button.is-primary, .button.is-danger, .button.is-warning {
-      width: 47%;
-  }
 </style>

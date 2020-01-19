@@ -39,7 +39,7 @@
                   </div>
                 </div>
 
-                <!-- password -->  
+                <!-- password  
                 <div class="field">
                   <div class="control">
                     <label for="password">Password</label>
@@ -51,8 +51,35 @@
                       required
                       placeholder="Password"
                       v-model="lUser.password"
-                    /> <!-- type="password" -->
+                    />
                   </div>
+                </div>-->
+                <!-- password -->  
+                <div class="field">
+                  <p class="control has-addons">
+                    <label for="password">Password</label>
+                    <input id="password"
+                      type="password"
+                      class="input"
+                       placeholder="Password"
+                      v-model="lUser.password"
+                    />
+                  </p>
+                  <button @click.prevent="passwordHelper ? passwordHelper = false : passwordHelper = true" 
+                      class="button moreInfo">
+                    <span class="icon is-primary">
+                      <i class="fas fa-info-circle"></i>
+                    </span>
+                  </button>
+                </div>
+                <div v-if="passwordHelper" class="notification is-link">
+                  <button class="delete" @click.prevent="passwordHelper = false"></button> 
+                  <ul>Password includes at least:
+                    <li>One number</li>
+                    <li>One lowercase letter</li>
+                    <li>One uppercase letter</li>
+                    <li>Is at least six characters long</li>
+                  </ul>
                 </div>
 
                 <!-- remember --> 
@@ -105,41 +132,36 @@ export default {
                 password: "salasana",
                 remember: false
               },
-              error: null
+              error: null,
+              passwordHelper: false
             }
         },
         methods: {
-          // not in use yet
-          emailIsValid: function () {
-            if( /(.+)@(.+){2,}\.(.+){2,}/.test(this.lUser.email.trim()) ) {
-              return true; // valid email
-            } else {              
-              return false; // invalid email
-            }
-          },
-          // not in use yet
-          passwordIsValid: function () {
-            // at least one number, one lowercase and one uppercase letter and at least six characters
-            var re = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/;
-            return re.test(this.lUser.password.trim());
-          },
-          login: function() {
-            // validate
-            // not tested yet
-            //if(!this.emailIsValid || !this.passwordIsValid) { this.error = 'Check email and password';  }
+          login() {
             console.log('Login this.error:', this.error);
             console.log('Login this.lUser:', this.lUser);
+            this.lUser.email = this.lUser.email.trim();
+            this.lUser.password = this.lUser.password.trim();
+            if(emailIsValid(this.lUser.email)) {
+              if(passwordIsValid(this.lUser.password)) {
+                if(this.lUser.remember == true) { this.lUser.remember = '1'; }
+                this.loginUser(this.lUser);
+                console.log('Login this.user:', this.lUser);
+              } else {
+                this.errorMsg = 'Please check password: It must have at least: one number, one lowercase and one uppercase letter and at least six characters';
+              }
+            } else {
+              this.errorMsg = 'Please check email';
+            }
+
             // if validated
-            if(this.error == null) {
-              if(this.lUser.remember == true) { this.lUser.remember = '1'; }
-              this.loginUser(this.lUser);
-              console.log('Login this.user:', this.user);
-            } 
+             
           },
           ...mapActions(["loginUser", "getHouseData"])
         }, // end methods
         watch: {
-          user:function() {
+          // after loginUser() code execution continues here
+          user() {
             console.log('user watch - this.user:', this.user);
             if (this.user === undefined || this.user.length == 0) { 
               this.error = 'Please check your email and password';
@@ -155,7 +177,8 @@ export default {
               this.$router.replace({name: 'booking'});
             }
           },
-          house:function() {             
+          // after getHouseData() code execution continues here
+          house() {          
             console.log('house watch - this.house:', this.house);
             // if (this.house.length>0) {
             if (this.house === undefined || this.house.length == 0) {

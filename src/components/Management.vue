@@ -1,7 +1,7 @@
 <template>
   <div>      
     <section class="section">
-      <div class="container">
+      <div id="management" class="container">
 
           <h2 class="title">Booking settings</h2>
           user: {{ user }}<br>
@@ -13,48 +13,48 @@
             <div class="column is-5 is-4-desktop">
 
               <form>
-              <span v-show="!registrationCode">
+              <span id="registration" v-show="!registrationCode">
                   <p class="subtitle is-3">1. General info</p>  
-                    <!-- house -->                 
+                    <!-- house -->
                     <div class="field">
                       <div class="control">
                         <label>House name, address or laundry room name</label>
                         <input class="input" type="text" 
                           placeholder="Example: Main street 22 laundry room"
-                          v-model="houseName"  
-                          :class="(houseName.length>houseNameMaxLength) ? 'exceedTextLength' : '' ">
-                        <span v-show="(houseName.length>houseNameMaxLength/2)" class="textLimiter is-pulled-right is-size-7" :class="(houseName.length>houseNameMaxLength) ? 'has-text-danger' : ''">{{ houseNameCharsLeft }}</span>
-
+                          v-model="houseName"
+                          :class="charsLeft(50, houseName)[0] ? 'exceedTextLength' : ''"
+                          >
+                        <span class="textLimiter is-pulled-right is-size-7"  :class="charsLeft(50, houseName)[0] ? 'has-text-danger' : ''">{{ charsLeft(50, houseName)[1] }}</span>
                       </div>
                     </div>
                     <div class="field">
                       <div class="control">
                         <label>Instructions for booking</label>
-                        <textarea v-model="description"  
-                          :class="(description.length>descriptionMaxLength) ? 'textarea exceedTextLength' : 'textarea'"
+                        <textarea v-model="description"
+                          class="textarea"
+                          :class="charsLeft(2000, description)[0] ? 'exceedTextLength' : ''"
                           rows="5" 
                           placeholder="Example: Laundry machines can be booked max. 7 days in advance. You can have max. 3 active bookings at a time. If you have not started laundry within 15 minutes from the start time, can anybody use your booking. Please keep laundry room clean!">
                         </textarea>
-                        <span v-show="(description.length>descriptionMaxLength/2)" class="textLimiter is-pulled-right is-size-7" :class="(description.length>descriptionMaxLength) ? 'has-text-danger' : ''">{{ descriptionCharsLeft }}</span>
-
-                        
+                        <span class="textLimiter is-pulled-right is-size-7" style="padding-right:22px"  :class="charsLeft(2000, description)[0] ? 'has-text-danger' : ''">{{ charsLeft(2000, description)[1] }}</span>
                       </div>
                     </div>                  
                   
                   <label>What can be booked?</label>
-                  <div class="field m-t-md radio-buttons-as-buttons has-addons">
-                    <p class="control">
-                        <button @click.prevent="noMachines = 1"
-                        class="button is-primary"
+
+                  <div class="field m-t-md radio-buttons-as-buttons has-addons wide">
+                    <p class="control wide">
+                        <button @click.prevent="noMachines = 1, errorMsg = ''"
+                        class="button is-primary wide"
                         :class="noMachines ? 'is-active' : 'is-inverted'"
                         >
                             <input type="radio" value="short_term" name="goal[short_or_long_term]" id="goal_short_or_long_term_short_term" />
                             Whole laundry room
                         </button>
                     </p>
-                    <p class="control">                    
+                    <p class="control wide">                    
                         <button @click.prevent="noMachines = 0"
-                        class="button is-primary"
+                        class="button is-primary wide"
                         :class="!noMachines ? 'is-active' : 'is-inverted'"
                         >
                             <input type="radio" value="medium_term" name="goal[short_or_long_term]" id="goal_short_or_long_term_medium_term" />
@@ -65,25 +65,59 @@
 
                   <!-- if Whole laundryroom selected - no field needed -->
                   <!-- if machines selected -->
+                  <!-- NEW -->
+                <!--<div v-show="!noMachines" class="control">-->
+                <div :style="{visibility: !noMachines ? 'visible' : 'hidden'}" class="control">
+                  
+                  <label>Machine names <small class="smallText"> Separate multiple with ; </small></label>
+                  <div class="field has-addons is-fullWidth" style="clear:left">
+                    <p v-show="!noMachines" class="control has-icons-right wide">
+                    <input class="input wide" type="text" 
+                            placeholder="Dryer 1"
+                            v-model="newMachineName"                            
+                            style="z-index:0"
+                            :class="newMachineName.indexOf(';') == -1 && charsLeft(3, newMachineName)[0] ? 'exceedTextLength' : ''
+                            ">                      
+                      <span class="is-right">
+                        <span class="textLimiter is-pulled-right is-size-7" 
+                                :class="newMachineName.indexOf(';') == -1 && charsLeft(3, newMachineName)[0] 
+                                ? 'has-text-danger' 
+                                : ''">{{ charsLeft(3, newMachineName)[1] }}</span> 
+                      </span>
+                    </p>
+                    <div class="control">
+                      <a @click.prevent="addMachine(3)" class="button is-primary"
+                             :disabled="newMachineName.indexOf(';') == -1 && charsLeft(3, newMachineName)[0]"
+                          >Add</a>
+                    </div>
+                  </div>
+
+                  <!-- OLD -------------------------------- -->
                   <div class="field">                  
-                    <div v-show="!noMachines" class="control">
+                    <div>
+                      <!--
+                        <div v-show="!noMachines" class="control">
                       <label>Machine names <small>(separate with ; to add multiple)</small></label>
                       <div class="field has-addons">
                         <div class="control wide">
                           <input class="input" type="text" 
                             placeholder="Example: Washing machine 1"
-                            v-model="newMachineName"
-                            :class="(newMachineName.indexOf(';') != -1) 
-                            ? (newMachineName.length>newMachineNameMaxLength ? 'exceedTextLength' : '') 
-                            : ''"
-                            >
-                          <span v-show="(newMachineName.length>newMachineNameMaxLength/2)" class="textLimiter is-pulled-right is-size-7" :class="(newMachineName.length>newMachineNameMaxLength) ? 'has-text-danger' : ''">{{ newMachineCharsLeft }}</span>
-                          
+                            v-model="newMachineName"                            
+                            style="z-index:0"
+                            :class="newMachineName.indexOf(';') == -1 && charsLeft(3, newMachineName)[0] ? 'exceedTextLength' : ''
+                            ">
+                          <span class="textLimiter is-pulled-right is-size-7" 
+                                :class="newMachineName.indexOf(';') == -1 && charsLeft(3, newMachineName)[0] 
+                                ? 'has-text-danger' 
+                                : ''">{{ charsLeft(3, newMachineName)[1] }}</span>                      
                         </div>
                         <div class="control">
-                          <a @click.prevent="addMachine()" class="button is-primary">Add</a>
+                          <a @click.prevent="addMachine(3)" class="button is-primary"
+                             :disabled="newMachineName.indexOf(';') == -1 && charsLeft(3, newMachineName)[0]"
+                          >Add</a>
                         </div>
                       </div>
+                      -->
                       <!-- machine names list   newMachines -->
                       <!--
                       <span v-for="b in bookings" :key="b.id"
@@ -95,8 +129,11 @@
                               {{ m.name }}
                               <button @click.prevent="deleteNewMachine(m.orderId)" class="delete is-small"></button>
                           </span>
+                          <button v-if="newMachines.length > 5" @click.prevent="newMachines = []" class="button is-warning">Remove all machines</button>
                       </div>
-                      <p v-show="(newMachines.length==0)" class="has-text-centered">Add at least 2 machines</p>                          
+                      <p v-show="(newMachines.length==0)" class="has-text-centered" style="margin-top: -20px;">
+                        Add at least 2 machines
+                      </p>
                     </div>                  
                   </div>
                                   
@@ -105,24 +142,26 @@
                     <button v-on:click.prevent="errorMsg = ''" class="delete"></button>
                     <strong>{{ errorMsg }}</strong>
                   </div>
+                </div>
 
-                  <p class="subtitle is-3">2. Booking times 
-                    <button @click.prevent="populateWithDefaultValues()" class="button iconButton">
-                      <span v-show="!defaultValuesUsed" class="icon is-big is-primary">
+                  <p class="subtitle is-3">2. Booking times</p> 
+                    <button id="useCommon" @click.prevent="populateWithDefaultValues()" class="button iconButton" style="float:unset">
+                      <span v-show="!defaultValuesUsed" class="icon is-big">
                         <i class="fa fa-magic"></i>
+                        <label>Use suggested times</label>
                       </span>
-                      <span v-show="defaultValuesUsed" class="icon is-big has-background-primary">
+                      <span v-show="defaultValuesUsed" class="icon is-big">
                         <i class="fa fa-magic"></i>
+                        <label>Reset times</label>
                       </span>
-                    </button>
-                  </p>
+                    </button>                  
 
                       <!-- time slot length -->
-                      <label>How many weeks into the future can booking be made?</label>
+                      <label>How many weeks into the future can a booking be made?</label>
                       <div class="field">
                         <div class="select is-fullwidth">
                           <select v-on:change="bookingTimeSpan = $event.target.value" v-model="bookingTimeSpan">
-                            <option :value="-1">Booking time range</option>
+                            <option :value="-1">Select</option>
                             <option v-for="(ts, index) in bookingTimeSpans" 
                                 :value="ts.id" 
                                 :key="ts.id"
@@ -132,12 +171,12 @@
                         </div>
                       </div>
 
-                      <!-- time slot length -->
+                      <!-- booking length -->
                       <label>How many hours is one booking?</label>
                       <div class="field">
                         <div class="select is-fullwidth">
                           <select v-on:change="slotLength = $event.target.value" v-model="slotLength">
-                            <option :value="-1">Time slot length</option>
+                            <option :value="-1">Select</option>
                             <option v-for="(s, index) in slotLengths" 
                                 :value="s" 
                                 :key="s"
@@ -147,8 +186,32 @@
                         </div>
                       </div>
                       
-                      <!-- slot start time -->
+                      <!-- slot start and end time -->
                       <label>Laundry room can be used between times</label>
+                      <div class="field level is-fullWidth" style="clear:left">
+                        <div class="select level-left">
+                          <select v-on:change="slotStart = $event.target.value" 
+                            v-model="slotStart">
+                            <option :value="-1">Start hour</option>
+                            <option v-for="hourCounter in 24" 
+                            :key="hourCounter"
+                            :value="hourCounter-1"
+                            >{{ hourCounter-1 }}:00</option>
+                          </select>
+                        </div>
+                        <div class="select level-right">
+                          <select v-on:change="slotEnd = $event.target.value" v-model="slotEnd"
+                            :class="slotStart>-1 && slotEnd>-1 && slotStart>=slotEnd ? 'exceedTextLength' : ''">
+                            <option :value="-1">End hour</option>
+                            <option v-for="hourCounter in 24" 
+                            :key="hourCounter"
+                            :value="hourCounter-1"
+                            >{{ hourCounter-1 }}:00</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <!-- OLD 
                       <div class="field has-addons">
                         <div class="column is-fullwidth noPadding">
                           <div class="control">
@@ -177,28 +240,26 @@
                           </div>
                         </div>
                       </div>
-                      <small>Last slot of the day starts at End hour</small><br>
+                      -->
+                      <small id="slotTimesExtraText">Last slot of the day starts at End hour</small>
 
                       <!-- max bookings per user -->
-                      <label>How many bookings can one user have?</label>
+                      <label style="clear:left">How many bookings can one user have?</label>
                       <div class="field">
                         <div class="select is-fullwidth"> 
                           <select v-on:change="maxBookingsPerUser = $event.target.value" v-model="maxBookingsPerUser">
-                            <option :value="-1">Maximum bookings per user</option>
-                            <option v-for="mb in maxBookings" 
-                                :key="mb"
-                                >{{ mb }}
-                            </option>
+                            <option :value="-1">Select</option>
+                            <option v-for="mb in maxBookings" :key="mb">{{ mb }}</option>
                           </select>
                         </div>
                       </div>
 
                       <!-- visible user information -->
-                      <label>What information is shown in a bookings to other users?</label>
+                      <label>What information can user see about other users?</label>
                       <div class="field">
                         <div class="select is-fullwidth">
                           <select v-on:change="visibleUserInfo = $event.target.value" v-model="visibleUserInfo">
-                            <option :value="-1">Visible information</option>
+                            <option :value="-1">Select</option>
                             <option :value="0">Nothing</option>
                             <option :value="1">Apartment number</option>
                             <option :value="2">Lastname</option>
@@ -209,30 +270,32 @@
                   <!-- save or update all -->
                   <div class="field">
                     <div class="control">
-                      <button @click.prevent="save" class="button is-primary is-fullwidth" type="submit">Save</button>
+                      <button @click.prevent="saveHouseInfo" class="button is-primary is-fullwidth" type="submit">Save</button>
                     </div>
                   </div>
 
-                </span> <!-- if registrationCode -->
+                </span>
                 
-                <span v-show="registrationCode" >
-                  <p class="subtitle is-3">Get code</p> 
-                  <!-- access code -->                
+                <span v-show="registrationCode">                  
+                  <p class="subtitle is-3">Congratulations! Your laundry room booking page has been created</p>
+                  <br><br>
+                  <p class="subtitle is-3">Tenant registration code</p> 
+                  <!-- tenant registration code -->                
                   <div class="field">
                     <label>Give this registration code to your tenants so they can register and start using the booking app</label>
                     <div class="control">
                       <input class="input is-fullwidth is-size-6 has-background-warning has-text-centered" type="text" :value="!registrationCode ? 'Registration code will appear here' : registrationCode">
                     </div>
-                    <label>Anybody who knows the code can register.</label>                  
+                    <label>Anybody who knows the code can register and make bookings.</label>                  
                   </div>
                   
-                  <!-- Go to booking btn 
+                  <!-- go to booking page btn -->
                   <div class="field">
                     <div class="control">
-                      <button @click.prevent="forwardToNextPage()" class="button is-primary is-fullwidth" type="submit">Go to booking page</button>
+                      <button @click.prevent="forwardToNextPage()" class="button is-primary is-fullwidth" type="submit">Now go test your new booking page</button>
                     </div>
                   </div>
-                  -->
+                 
                  </span>
 
               </form>
@@ -250,9 +313,7 @@ export default {
   data () {
     return {
       registrationCode: 0, 
-      houseName: 'Main street 22 laundry room', 
-      houseNameMaxLength: 50,
-      houseNameCharsLeft: 0,
+      houseName: 'Main street 22 laundry room',
       noMachines: 0,
       bookingTimeSpans: [{ id: 7, weeks: 1 },{ id: 14, weeks: 2 },{ id: 28, weeks: 4 },{ id: 56, weeks: 8 }],
       bookingTimeSpan: -1,
@@ -267,11 +328,7 @@ export default {
       aptNumber: 'Apt 784',
       visibleUserInfo: -1,
       description: 'Laundry machines can be booked max. 7 days in advance. You can have max. 3 active bookings at a time. If you have not started laundry within 15 minutes from the start time, can anybody use your booking. Please keep laundry room clean!',
-      descriptionMaxLength: 1000,
-      descriptionCharsLeft: 0,
       newMachineName: '',
-      newMachineNameMaxLength: 25,
-      newMachineCharsLeft: 0,
       newMachines: [],
       defaultValuesUsed: false,
       houseSaved: false,
@@ -279,71 +336,60 @@ export default {
     }
   },
   methods: {
-  addMachine: function () {
+    addMachine: function (maxLength) {
       // TODO: change first letter into capital, remove special characters        
       if(this.newMachineName != '') {
-          if(this.newMachineName.indexOf(";") == -1) {                
-              // one item
-              this.newMachines.push({ 'name': this.newMachineName, 'orderId': this.newMachines.length });
+          if(this.newMachineName.split(";").length > 50) { this.errorMsg = 'Max 50 machines allowed.'; } // validate number of machines
+          if(this.newMachineName.indexOf(";") == -1) {    
+              // TODO: check for doubles
+              // one item entered
+              if(this.newMachineName.length > maxLength) { 
+                this.errorMsg = 'Machine name is too long, it can be max ' + maxLength + ' characters';                     
+              } else {
+                this.newMachines.push({ 'name': this.newMachineName, 'orderId': this.newMachines.length });
+              }
           } else {
-              // multiple items
+              // multiple items entered
               let machinesArr = this.newMachineName.split(";");
               let counter = machinesArr.length;
               for( let i = 0; i < machinesArr.length; i++){ 
                   if(machinesArr[i] != '') {
+                    if(machinesArr[i].length > maxLength) { 
+                      this.errorMsg = 'One machine name is too long, it can be max ' + maxLength + ' characters';                    
+                    } else {
                       this.newMachines.push({ 'name': machinesArr[i], 'orderId': counter });
                       counter++;
+                    }
                   }
               }
           }
           this.newMachineName = '';
       }
-  },
-  saveMachines: function (houseId) {
-      this.newMachines.forEach(function (m) {
-        console.log('Adding machine: houseId' + houseId + ' name' + m.name + ' orderId' + m.orderId);
-        db.collection('machines').add({ 
-            houseId: houseId,
-            name: m.name,
-            orderId: m.orderId
-          })
-          .then(docRef => {  
-            //this.successMsgText = 'Added: ' + startTime + ':00 - ' + endTime + ':00 ' + this.machines.find(m => m.id == machineId).name;
-            //this.successMsg = true;  
-          })
-          .catch(error => {
-            console.error('Error in saving machines: ', error)
-          });        
-      }); // forEach
-  },
-  deleteNewMachine: function (orderId) {
+    },
+    deleteNewMachine: function (orderId) {
         for( let i = 0; i < this.newMachines.length; i++){ 
           if ( this.newMachines[i].orderId === orderId) {
             this.newMachines.splice(i, 1); 
             i--;
           }
         }
-  },
-  save: function () {
-        // validate form
-        console.log('validate form');
-        /* 
-        if(this.houseName.length<3) { this.errorMsg+= " Please enter House, address or laundryroom name"; }
-        if(this.noMachines == false && this.newMachineName.length<2) { this.errorMsg+= " You must add at least 2 machines or select \"Whole laundryroom\" as what can be booked."; }
-        if(this.slotStart < this.slotEnd) { this.errorMsg+= " Check start- and end hour."; }
-        */
-        if(this.noMachines == false && this.newMachines.length<1) { this.errorMsg+= " You must add at least 2 machines or select \"Whole laundryroom\" as what can be booked."; }
-        
-        if(this.bookingTimeSpan == -1) { this.errorMsg+= " Please select Booking time range. "; }
-        if(this.slotLength == -1) { this.errorMsg+= " Please select Time slot length. "; }
-        if(this.maxBookingsPerUser == -1) { this.errorMsg+= " Please select Maximum bookings per user. "; }
-        if(this.visibleUserInfo == -1) { this.errorMsg+= " Please select Visible information. "; }
-// TODO Test if no machines were given
-// TODO check that there are at least 2 machines - if machines selected
-// TODO validate that machine names are unique
-console.log('validate form - errorMsg:', this.errorMsg);
-       if(this.errorMsg.length < 1) {
-        // sort and join machines
+    },
+    saveHouseInfo: function () {
+      // validate form
+      console.log('validate form');
+      if(this.houseName.length<3) { this.errorMsg+= " Please enter House, address or laundryroom name"; }
+      if(this.noMachines == true && this.newMachineName.length<2) { this.errorMsg+= " You must add at least 2 machines or select \"Whole laundryroom\" as what can be booked."; }
+      if(this.slotStart > this.slotEnd) { this.errorMsg+= " Check start- and end hour."; }
+      if(this.noMachines == false && this.newMachines.length<1) { this.errorMsg+= " You must add at least 2 machines or select \"Whole laundryroom\" as what can be booked."; }
+      
+      if(this.bookingTimeSpan == -1) { this.errorMsg+= " Please select Booking time range. "; }
+      if(this.slotLength == -1) { this.errorMsg+= " Please select Time slot length. "; }
+      if(this.maxBookingsPerUser == -1) { this.errorMsg+= " Please select Maximum bookings per user. "; }
+      if(this.visibleUserInfo == -1) { this.errorMsg+= " Please select Visible information. "; }
+
+      if(this.errorMsg.length < 1) {
+        // sort and join
+        if(this.noMachines == true) { this.newMachines.push({ 'name': 'dummy', 'orderId': 0 }); }
         this.newMachines.sort(function(a, b) {
           return parseFloat(a.orderId) - parseFloat(b.orderId);
         });
@@ -351,8 +397,6 @@ console.log('validate form - errorMsg:', this.errorMsg);
         this.newMachines.forEach( item => machines.push(item.name) );
         let machineNames = machines;
         if(machineNames.indexOf(";") == -1) { machineNames = machines.join(";"); }
-console.log('validate form - machineNames:', machineNames);
-        
         // save house info
         let house = {
           "adminUserId": this.user.id,
@@ -366,16 +410,15 @@ console.log('validate form - machineNames:', machineNames);
           "slotStart": parseInt(this.slotStart),
           "noMachines": this.noMachines,
           "machineNames": machineNames,
-          "name": this.name.trim(),
-          "aptNumber": this.aptNumber.trim(),
+          //"name": this.name.trim(),
+          //"aptNumber": this.aptNumber.trim(),
+          "visibleUserInfo": this.visibleUserInfo
         };
         this.saveHouse(house);
-      } else {
-        console.log('there were errors');
       }
-  },
-  // clicking the magic wand icon sets default number time slot values in form (toggle)
-  populateWithDefaultValues: function () {
+    },
+    // clicking the magic wand icon sets default times in form
+    populateWithDefaultValues: function () {
       if(!this.defaultValuesUsed) {
         this.bookingTimeSpan = 28;
         this.slotLength = 2;
@@ -394,40 +437,30 @@ console.log('validate form - machineNames:', machineNames);
         this.defaultValuesUsed = false;
       }
     },
-    ...mapActions(["saveHouse", "saveUser", "getCode", "getHouseData"])
+    ...mapActions(["saveHouse", "saveUser", "getCode", "getHouseData"]),
+    // calculates number of characters left, returns array: [is limit exceeded, characters left / max]
+    charsLeft(maxLen, str) {
+        return [ str.length > maxLen ? true : false, 
+                maxLen - str.length + " / " + maxLen ];
+    },
+    forwardToNextPage() {
+      this.$router.replace({name: 'booking'});
+    }
   }, 
   watch: {
-    // after saving house execution continues here
+    // after save houseInfo code execution continues here
     house:function() {             
-      console.log('house watch - this.house:', this.house);      
-      // if (this.house.id != '') {
+      console.log('house watch - this.house:', this.house);
       if (this.house === undefined || this.house.length == 0) { 
         this.errorMsg = 'Oh no! - Something went wrong in saving the house info.';
         console.log('house save error');
       } else {
         console.log('house saved');
-        // show tenant reg code      
-        console.log('house save erthis.house.registrationCode: ', this.house.registrationCode);
-        this.registrationCode = this.house.registrationCode;
-        
-        // this.$router.replace({name: 'booking'});     
+        // show tenant reg code              
+        this.registrationCode = this.house.registrationCode;        
+        this.$router.replace({name: 'booking'});     
       }
     }
-  },
-  computed: { 
-    // displays number of characters left
-    houseNameCharsLeft() {
-        return (this.houseNameMaxLength - this.houseName.length) + " / " + this.houseNameMaxLength;
-      },
-    descriptionCharsLeft() {
-        return (this.descriptionMaxLength - this.description.length) + " / " + this.descriptionMaxLength;
-    },
-    newMachineCharsLeft() {
-        if(this.newMachineName.indexOf(";") == -1) {
-          // if one machine name given (not multiple separated with ; )
-          return (this.newMachineNameMaxLength - this.newMachineName.length) + " / " + this.newMachineNameMaxLength;
-        }
-    },
   },
   computed: mapGetters(["user", "code", "house"])
 }

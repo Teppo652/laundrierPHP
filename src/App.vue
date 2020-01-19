@@ -135,6 +135,10 @@ html, body {
     color: #fff;
     font-weight: 600;
 }
+/*
+.input, .select select {
+  height: 44px;
+} */
 label {
   color: #fff;
 }
@@ -159,21 +163,37 @@ label {
 #booking .wide span {
   border: solid 1px #ba9e30;
 }
+#registration label {
+  float: left;
+}
 svg.fa-clock {
     margin: 0 2px 1px 14px;
 }
 .iconButton {
   border: none;
   background-color: transparent !important;
+  color: #fff;
+}
+#registration .iconButton {
+  float: right;
+  width: 100%;
 }
 .iconButton span {
   margin:0 5px !important;
   padding: 0;
 }
+.iconButton span:hover {
+  color: #fff;
+}
+.iconButton span label {
+  margin-left: 5px;
+}
 .iconButton svg path {
-   /* fill: #ffe681; */
    fill: #f5f5f5;
  }
+ #useCommon.is-focused:not(:active), #useCommon:focus:not(:active) {
+    box-shadow: none;
+}
 .button[disabled] {
   opacity: 1;
 }
@@ -189,19 +209,26 @@ svg.fa-clock {
 .buttons .button:last-child:not(.is-fullwidth) {
     margin-right: .5rem;
 }
+span.is-passedTime, .button.is-passedTime {
+  opacity: .1;
+}
 .tags .tag {
     margin-right: .5rem;
 }
 .machineName {
   color: red;
 }
-input.exceedTextLength, textarea.exceedTextLength {
+input.exceedTextLength, textarea.exceedTextLength, select.exceedTextLength {
   color: #be1839 !important;
   font-size: 1rem;
+  background-color: pink !important;
+  border: solid 1px #be1839 !important;
 }
 .textLimiter {
-  padding-right: 6px;
-  color: #bcbcbc;
+  padding-right: 10px;
+  margin-top: -28px;
+  position: relative;
+  color: #d5d5d5;
 }
 .has-text-danger {
   color: #be1839 !important;
@@ -218,11 +245,75 @@ input.exceedTextLength, textarea.exceedTextLength {
 .number {
   background-color: #1b68be;
 }
+.smallText {
+  color: #4d4d4d;
+}
+.slotTimesExtraText {
+  clear: left;
+  float: left;
+}
 footer {
   flex-grow: 1;
 } 
 /* temporary */
 .navbar-burger {
   display: none;
+}
+#management .level {
+  width: 50%;
+}
+#management .level-left {
+  float: left !important;
+}
+#management .level-right {
+  float: right !important;
+  margin-top: 0 !important;
+}
+.moreInfoIcon { 
+  margin-top: 22px; 
+}
+.moreInfo {
+  /*
+    float: right;
+    margin-top: -42px;
+    border: none;
+    padding: 0 !important;
+    width: 38px; */
+    float: right;
+    margin: -37px 4px 0 0;
+    border: none;
+    padding: 0 !important;
+    width: 34px;
+    height: 34px !important;
+}
+ul {
+  list-style: square;
+  font-size: 15px;
+  font-weight: 600;  
+  padding: 7px;
+}
+ul li {
+  text-align: left !important;
+  font-weight: 100;
+}
+.moreInfo svg {
+  color: #d6d6d6;
+}
+#booking .button.is-primary, 
+#booking .button.is-danger, 
+#booking .button.is-warning,
+#booking .is-passedTime {
+  width: 47%;       
+}
+.button.iconButton:focus:not(:active), 
+.button.moreInfo:focus:not(:active) {
+  box-shadow: none;
+}
+/* end time fix on mobile */
+@media only screen and (max-width: 690px) {
+  #booking .level-right {
+    float: left !important;
+    clear: left !important;
+  }
 }
 </style>
