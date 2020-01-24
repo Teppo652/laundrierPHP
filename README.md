@@ -29,3 +29,5 @@ Functionalities in progress to be fixed:
 -Allowes booking times that have already passed
 -Remembering user with local storage or cookie
 
+Look in screenshots to see MySQL database structure.
+
