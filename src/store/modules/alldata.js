@@ -17,6 +17,7 @@ const state = {
   const actions = {
     async loginUser({ commit }, data) {
       let postData = null;
+      console.log('store login user: postData:', data);
       if(data) { postData  = JSON.stringify(data); }
       //let data = [];  
       const url = 'https://stuffonaut.com/laundrier/loginUser.php';  
@@ -31,12 +32,15 @@ const state = {
            if (res.ok) {
             return res.json();
            } else {
-             console.log(res);
+             console.log('store login user:', res);
            }  
          }).then(data => {
+          console.log('store login returned:', data);
            if(data[0] != null) {
+             console.log('store login user: user found');
             commit('setUser', data[0]);
            } else { 
+            console.log('store login user: user not found');
             commit('setUser', []);             
            }           
          })
@@ -90,11 +94,12 @@ const state = {
           console.log(res);
         }
       }).then(newUser => {
-        // if email exists already
+        // if email exists already        
+          // not in use yet
         if(newUser.id == 'userExists') {
           console.log('store: User with that email exists already');
         } else {
-          // saved user                    
+          // saved user in DB                   
           console.log('store: User created, id:', newUser.id);
         }
         data.id = newUser.id;
@@ -180,9 +185,8 @@ const state = {
         } else {
           console.log(res);
         }
-      }).then(data => {
-        if(data.deleted == 1) {
-          console.log('store: Deleted, data: ', data);
+      }).then(deleted => {
+        if(deleted == 1) {
           commit('removeBooking', data.id);
         }
       })
@@ -209,8 +213,10 @@ const state = {
           console.log(res);
         }
       }).then(newBooking => {
-        data.id = newBooking.id;
-        commit('addBooking', data);
+        if(newBooking != 0) { // checks if booking already exists
+          data.id = newBooking.id;
+          commit('addBooking', data);
+        }
       })
       .catch(error => { 
         console.error(error);
@@ -222,10 +228,25 @@ const state = {
     setUser: (state, user) => (state.user = user),
     setCode: (state, code) => (state.code = code), 
     setHouse: (state, house) => (state.house = house),
-    setBookings: (state, bookings) => (state.bookings = bookings),
+    //setBookings: (state, bookings) => (state.bookings = bookings),
+    setBookings: function(state, bookings) {
+      // add sorting field
+      bookings.forEach(function(data, index) {
+        data.sorting = data.date + 'M' + data.machineId + 'T' + data.startTime;
+      });
+      // sort by date, machineId and startTime
+      bookings = bookings.sort(function(a,b) {return (a.sorting > b.sorting) ? 1 : ((b.sorting > a.sorting) ? -1 : 0);} );
+      state.bookings = bookings;
+    },
     setBooking: (state, booking) => (state.booking = booking),
-    addBooking: (state, data) => state.bookings.push(data),    
-    removeBooking: (state, bookings) => state.bookings.filter(booking => booking.id !== id)
+    //addBooking: (state, data) => state.bookings.push(data),
+    addBooking: function(state, data) { 
+      data.sorting = data.date + 'M' + data.machineId + 'T' + data.startTime;
+      state.bookings.push(data);
+      // sort by date, machineId and startTime
+      state.bookings = state.bookings.sort(function(a,b) {return (a.sorting > b.sorting) ? 1 : ((b.sorting > a.sorting) ? -1 : 0);} );      
+    },
+    removeBooking: (state, id) => state.bookings = state.bookings.filter(booking => booking.id !== id)
   };
   
   export default {

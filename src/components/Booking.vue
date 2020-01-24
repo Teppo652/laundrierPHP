@@ -1,26 +1,11 @@
 <template>
   <div>   
 
-        
-         
+    <div v-if="!house" id="info" class="has-text-centered">Logged out</div>
 
     <section v-if="house" id="booking" class="section">
       <div class="container has-text-centered">
-
-          <!-- for debugging -->
-          <div style="font-size:.8rem">
-            <h4>Debugging view</h4>
-           user: {{ user }}<br><br>
-          house: {{ house }}<br><br>
-          machines: {{ machines }}<br><br>
-          user.id: {{ user.id}}<br><br><br>
-          selectedDay: {{ selectedDay }}<br><br>
-          slots: {{ slots }}<br><br>
-          bookings: {{ bookings }}<br><br>
-          calendarDates: {{ calendarDates }}<br>          
-          currentHour: {{ currentHour }}
-          </div>
-
+          
           <h3 class="title">Laundry room booking 
             <button v-show="house.description.length>0" @click.prevent="showInfoPanel = showInfoPanel ? false : true" class="button iconButton">
               <span class="icon is-big is-primary">
@@ -35,7 +20,9 @@
           <div class="columns is-centered">
             <div class="column is-5 is-5-desktop">              
               <p class="subtitle is-4">{{ house.houseName }}</p>
-              <p v-show="showInfoPanel && house.description.length>0" class="has-text-white-bis">{{ house.description }}</p>              
+              <!--<p v-show="showInfoPanel && house.description.length>0" class="has-text-white-bis">{{ house.description }}</p>-->
+              <div v-show="showInfoPanel && house.description.length>0" class="notification is-link">{{ house.description }}</div>
+
               <form>    
                 <!-- my bookings title -->
                 <h5 class="title">You have                      
@@ -50,11 +37,12 @@
                     </span> 
                   </button>
                 </h5>
+                
                 <!-- my bookings list -->
 <!-- TODO add Texts: This week, next week with divider -->
+                <!-- v-show="b.userId == user.id && b.startTime >= currentHour" -->
                  <div class="tags wide">
-                  <span v-for="b in bookings" :key="b.id"
-                          v-show="b.userId == user.id && b.startTime >= currentHour"
+                  <span v-show="b.userId == user.id" v-for="b in bookings" :key="b.id"                          
                           :text="dispDate = getSingleDaysInfo('20'+b.date, true)"
                           class="tag is-medium is-fullwidth bookingTag is-warning"
                   >{{ dispDate }} &nbsp; <i class="far fa-clock"></i> &nbsp;{{ String(b.startTime).padStart(2, '0') }}:00 <span v-if="!house.noMachines" class="machineName">{{ machines.find(m => m.id == b.machineId).name }}</span>
@@ -62,6 +50,7 @@
                   </span>
                 </div>                
                 <p v-if="totBookings == 0" class="has-text-white-bis">You have no bookings, click plus button to make them.</p>
+                <p v-if="totBookings > 0" id="clickXToDeleteText">Click x to delete booking</p>
                 
                 <!-- error message -->
                 <div v-show="errorMsg != ''" class="notification is-danger">
@@ -70,12 +59,13 @@
                 </div>
 
                 
-                  
+                <div v-show="showBookingPanel">
                   Color legend<br>
                   <span class="tag is-warning is-normal">Booked to you</span> &nbsp;
                   <span class="tag is-primary is-normal">Free</span> &nbsp;
                   <span class="tag is-danger  is-normal">Booked to somebody else</span>
                   <br><br>
+                </div>
 
                 <!-- add a new booking -section -->
                 <section v-show="showBookingPanel">
@@ -136,7 +126,7 @@
 
                     <!-- OLD -->
                     <!--<span v-for="m in machines"  :key="m" v-show="selectedMachine == -1 || m.id == selectedMachine"> -->                      
-                    <span v-for="(m, index) in machines" :key="index" :value="m.id"> <!-- v-show="selectedMachine == -1 || m.id == selectedMachine"> -->
+                    <span v-for="(m, index) in machines" :key="index" :value="m.id" v-show="selectedMachine == -1 || m.id == selectedMachine">
                         <p v-if="!house.noMachines" class="subtitle is-3">{{ m.name }}</p>
                         Click to book a time<br>
                         
@@ -188,7 +178,7 @@ export default {
   data () {
     return { 
       showInfoPanel: false,
-      showBookingPanel: true,
+      showBookingPanel: false,
       successMsg: '',
       errorMsg: '',
       machines: [],
@@ -288,22 +278,18 @@ export default {
       }
     },
     deleteBooking: function (bookingId) {
-      if(confirm ('Are you sure you want to delete?')) {  
-          console.log('deleteBooking - bookingId: ', bookingId);
+      if(confirm ('Are you sure you want to delete?')) {
         this.removeBooking({ "id": bookingId });
-        this.getBookings([this.user.houseId]);
+        return;
       } 
     },
     ...mapActions(["getBookings", "addBooking", "removeBooking"])
   }, // end methods 
-  mounted() {
-    var date = new Date();
-    this.currentHour = date.getHours();    
-    this.createSlotArray(parseInt(this.house.slotStart), parseInt(this.house.slotEnd), parseInt(this.house.slotLength));
-    if(this.house.noMachines == 0) { this.house.noMachines = false; }
-    this.getMachines();
-    this.getCalendarDates(); 
-    this.getBookings([this.user.houseId]);
+  watch: {
+    // execution continues here
+    house: function() {  
+    
+    }
   }, 
   filters: { 
     // add a leading zero to time < 10
@@ -313,6 +299,26 @@ export default {
       while (value.length < (2 || 2)) {value = "0" + value;}   
       return value;
     } 
+  },
+  async mounted() {
+    var date = new Date();
+    await this.createSlotArray(parseInt(this.house.slotStart), parseInt(this.house.slotEnd), parseInt(this.house.slotLength));
+    if(this.house.noMachines == 0) { this.house.noMachines = false; }
+    await this.getMachines();
+    await this.getCalendarDates(); 
+    await this.getBookings([this.house.id]);
+  },          
+  created() {
+    /*
+    var date = new Date();
+    this.currentHour = date.getHours();
+    this.createSlotArray(parseInt(this.house.slotStart), parseInt(this.house.slotEnd), parseInt(this.house.slotLength));
+    if(this.house.noMachines == 0) { this.house.noMachines = false; }
+    this.getMachines();
+    this.getCalendarDates(); 
+    //this.createSlotArray(parseInt(this.house.slotStart), parseInt(this.house.slotEnd), parseInt(this.house.slotLength));
+    this.getBookings([this.house.id]);
+    */
   },
   computed: mapGetters(["bookings", "user", "house"])
 };

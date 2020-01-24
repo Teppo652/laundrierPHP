@@ -4,11 +4,11 @@
       <div id="management" class="container">
 
           <h2 class="title">Booking settings</h2>
-          user: {{ user }}<br>
-          house: {{ house }}<br>
-           <p class="subtitle is-4">Here the management can set up and edit laundry booking settings</p>
-                  <p>How does it work? Fill the form below, enter bookable times and machine names (if you decide that individual machines can be booked). After saving you get access code that you can give to your tenants so they can register and start using the booking system.</p>
-                  <br>
+          <span v-show="!registrationCode">
+            <p class="subtitle is-4">Here the management can set up and edit laundry booking settings</p>
+            <p>How does it work? Fill the form below, enter bookable times and machine names (if you decide that individual machines can be booked). After saving you get access code that you can give to your tenants so they can register and start using the booking system.</p>
+            <br>
+          </span>
           <div class="columns is-centered">
             <div class="column is-5 is-4-desktop">
 
@@ -44,7 +44,7 @@
 
                   <div class="field m-t-md radio-buttons-as-buttons has-addons wide">
                     <p class="control wide">
-                        <button @click.prevent="noMachines = 1, errorMsg = ''"
+                        <button @click.prevent="noMachines = 1, errorMsg = []"
                         class="button is-primary wide"
                         :class="noMachines ? 'is-active' : 'is-inverted'"
                         >
@@ -76,18 +76,18 @@
                             placeholder="Dryer 1"
                             v-model="newMachineName"                            
                             style="z-index:0"
-                            :class="newMachineName.indexOf(';') == -1 && charsLeft(3, newMachineName)[0] ? 'exceedTextLength' : ''
+                            :class="newMachineName.indexOf(';') == -1 && charsLeft(30, newMachineName)[0] ? 'exceedTextLength' : ''
                             ">                      
                       <span class="is-right">
                         <span class="textLimiter is-pulled-right is-size-7" 
-                                :class="newMachineName.indexOf(';') == -1 && charsLeft(3, newMachineName)[0] 
+                                :class="newMachineName.indexOf(';') == -1 && charsLeft(30, newMachineName)[0] 
                                 ? 'has-text-danger' 
-                                : ''">{{ charsLeft(3, newMachineName)[1] }}</span> 
+                                : ''">{{ charsLeft(30, newMachineName)[1] }}</span> 
                       </span>
                     </p>
                     <div class="control">
-                      <a @click.prevent="addMachine(3)" class="button is-primary"
-                             :disabled="newMachineName.indexOf(';') == -1 && charsLeft(3, newMachineName)[0]"
+                      <a @click.prevent="addMachine(30)" class="button is-primary"
+                             :disabled="newMachineName.indexOf(';') == -1 && charsLeft(30, newMachineName)[0]"
                           >Add</a>
                     </div>
                   </div>
@@ -138,9 +138,12 @@
                   </div>
                                   
                   <!-- error message -->
-                  <div v-show="errorMsg != ''"  class="notification is-danger">
-                    <button v-on:click.prevent="errorMsg = ''" class="delete"></button>
-                    <strong>{{ errorMsg }}</strong>
+                  <!-- v-show="typeof errorMsg !== 'undefined' && errorMsg.length > 0" -->
+                  <div v-show="typeof errorMsg !== 'undefined' && errorMsg.length > 0" class="notification is-danger"> <!-- NEW -->
+                    <button v-on:click.prevent="errorMsg = []" class="delete"></button>
+                    <ul v-for="(err, index) in errorMsg" :key="index">
+                      <li>{{ err }}</li>
+                    </ul>
                   </div>
                 </div>
 
@@ -148,7 +151,7 @@
                     <button id="useCommon" @click.prevent="populateWithDefaultValues()" class="button iconButton" style="float:unset">
                       <span v-show="!defaultValuesUsed" class="icon is-big">
                         <i class="fa fa-magic"></i>
-                        <label>Use suggested times</label>
+                        <label>Use commonly selected times</label>
                       </span>
                       <span v-show="defaultValuesUsed" class="icon is-big">
                         <i class="fa fa-magic"></i>
@@ -313,7 +316,7 @@ export default {
   data () {
     return {
       registrationCode: 0, 
-      houseName: 'Main street 22 laundry room',
+      houseName: '',
       noMachines: 0,
       bookingTimeSpans: [{ id: 7, weeks: 1 },{ id: 14, weeks: 2 },{ id: 28, weeks: 4 },{ id: 56, weeks: 8 }],
       bookingTimeSpan: -1,
@@ -324,29 +327,34 @@ export default {
       hourCounter: 0,
       slotStart: -1,
       slotEnd: -1,
-      name: 'Test user name',
-      aptNumber: 'Apt 784',
+      name: '',
+      aptNumber: '',
       visibleUserInfo: -1,
-      description: 'Laundry machines can be booked max. 7 days in advance. You can have max. 3 active bookings at a time. If you have not started laundry within 15 minutes from the start time, can anybody use your booking. Please keep laundry room clean!',
+      description: '',
       newMachineName: '',
       newMachines: [],
       defaultValuesUsed: false,
       houseSaved: false,
-      errorMsg: ''
+      errorMsg: []
     }
   },
   methods: {
     addMachine: function (maxLength) {
       // TODO: change first letter into capital, remove special characters        
       if(this.newMachineName != '') {
-          if(this.newMachineName.split(";").length > 50) { this.errorMsg = 'Max 50 machines allowed.'; } // validate number of machines
+          if(this.newMachineName.split(";").length > 50) { this.errorMsg.push("Max 50 machines allowed."); } // validate number of machines
           if(this.newMachineName.indexOf(";") == -1) {    
-              // TODO: check for doubles
-              // one item entered
-              if(this.newMachineName.length > maxLength) { 
-                this.errorMsg = 'Machine name is too long, it can be max ' + maxLength + ' characters';                     
+              // TODO: check for 
+              this.newMachineName = this.newMachineName.trim();
+              if(this.newMachines.map(function(x) {return x.name; }).indexOf(this.newMachineName) != -1) {
+                this.errorMsg.push('Machine name \"' + this.newMachineName + '\" exists already, name must be unique.');
               } else {
-                this.newMachines.push({ 'name': this.newMachineName, 'orderId': this.newMachines.length });
+                // one item entered
+                if(this.newMachineName.length > maxLength) { 
+                  this.errorMerrorMsg.push('Machine name is too long, it can be max ' + maxLength + ' characters');
+                } else {
+                  this.newMachines.push({ 'name': this.newMachineName, 'orderId': this.newMachines.length });
+                }
               }
           } else {
               // multiple items entered
@@ -355,10 +363,15 @@ export default {
               for( let i = 0; i < machinesArr.length; i++){ 
                   if(machinesArr[i] != '') {
                     if(machinesArr[i].length > maxLength) { 
-                      this.errorMsg = 'One machine name is too long, it can be max ' + maxLength + ' characters';                    
+                      this.errorMsg.push('One of machine names is too long, it can be max ' + maxLength + ' characters');
                     } else {
-                      this.newMachines.push({ 'name': machinesArr[i], 'orderId': counter });
-                      counter++;
+                      machinesArr[i] = machinesArr[i].trim();
+                      if(this.newMachines.map(function(x) {return x.name; }).indexOf(machinesArr[i]) != -1) {
+                        this.errorMsg.push('Machine name \"' + machinesArr[i] + '\" exists already, name must be unique.');
+                      } else {
+                        this.newMachines.push({ 'name': machinesArr[i], 'orderId': counter });
+                        counter++;
+                      }
                     }
                   }
               }
@@ -376,27 +389,19 @@ export default {
     },
     saveHouseInfo: function () {
       // validate form
+      this.errorMsg = [];
       console.log('validate form');
-      if(this.houseName.length<3) { this.errorMsg+= " Please enter House, address or laundryroom name"; }
-      if(this.noMachines == true && this.newMachineName.length<2) { this.errorMsg+= " You must add at least 2 machines or select \"Whole laundryroom\" as what can be booked."; }
-      if(this.slotStart > this.slotEnd) { this.errorMsg+= " Check start- and end hour."; }
-      if(this.noMachines == false && this.newMachines.length<1) { this.errorMsg+= " You must add at least 2 machines or select \"Whole laundryroom\" as what can be booked."; }
+      if(this.houseName.length<3) { this.errorMsg.push("Please enter House, address or laundryroom name"); }
+      if(this.noMachines == 0 && this.newMachines.length<1) { this.errorMsg.push("You must add at least 2 machines or select \"Whole laundryroom\" as what can be booked."); }
+      if(this.slotStart > this.slotEnd) { this.errorMsg.push("Check start- and end hour."); }
       
-      if(this.bookingTimeSpan == -1) { this.errorMsg+= " Please select Booking time range. "; }
-      if(this.slotLength == -1) { this.errorMsg+= " Please select Time slot length. "; }
-      if(this.maxBookingsPerUser == -1) { this.errorMsg+= " Please select Maximum bookings per user. "; }
-      if(this.visibleUserInfo == -1) { this.errorMsg+= " Please select Visible information. "; }
+      if(this.bookingTimeSpan == -1) { this.errorMsg.push("Please select Booking time range."); }
+      if(this.slotLength == -1) { this.errorMsg.push("Please select Time slot length."); }
+      if(this.maxBookingsPerUser == -1) { this.errorMsg.push("Please select Maximum bookings per user."); }
+      if(this.visibleUserInfo == -1) { this.errorMsg.push("Please select Visible information."); }
 
-      if(this.errorMsg.length < 1) {
-        // sort and join
-        if(this.noMachines == true) { this.newMachines.push({ 'name': 'dummy', 'orderId': 0 }); }
-        this.newMachines.sort(function(a, b) {
-          return parseFloat(a.orderId) - parseFloat(b.orderId);
-        });
-        let machines = [];
-        this.newMachines.forEach( item => machines.push(item.name) );
-        let machineNames = machines;
-        if(machineNames.indexOf(";") == -1) { machineNames = machines.join(";"); }
+      if(this.errorMsg.length == 0) {
+        let machineNames = this.prepareMachinelistForDB();
         // save house info
         let house = {
           "adminUserId": this.user.id,
@@ -415,7 +420,20 @@ export default {
           "visibleUserInfo": this.visibleUserInfo
         };
         this.saveHouse(house);
+      } else {
+        console.log('there were errors:', this.errorMsg[0]);
       }
+    },
+    prepareMachinelistForDB: function () {
+        // if no machines, save dummy        
+        if(this.noMachines == true) { this.newMachines.push({ 'name': 'dummy', 'orderId': 0 }); }
+        // combine machine names into string for saving
+        this.newMachines.sort(function(a, b) { return parseFloat(a.orderId) - parseFloat(b.orderId);});
+        let machines = [];
+        this.newMachines.forEach( item => machines.push(item.name) );
+        let machineNames = machines;
+        if(machineNames.indexOf(";") == -1) { machineNames = machines.join(";"); }
+        return machineNames;
     },
     // clicking the magic wand icon sets default times in form
     populateWithDefaultValues: function () {
@@ -457,8 +475,7 @@ export default {
       } else {
         console.log('house saved');
         // show tenant reg code              
-        this.registrationCode = this.house.registrationCode;        
-        this.$router.replace({name: 'booking'});     
+        this.registrationCode = this.house.registrationCode;
       }
     }
   },

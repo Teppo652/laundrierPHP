@@ -8,11 +8,18 @@
             <!-- logo -->
             <img src="./assets/washing-machine.svg" />
             <router-link id="logo" class="navbar-item"  to="/">Laundrier</router-link>
+            <!--
             <a class="navbar-burger" role="button" aria-label="menu" aria-expanded="false"><span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span></a>
+            -->
+            <span class="navbar-burger burger" data-target="navMenu">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
           </div>
           <div class="navbar-menu">
             <div class="navbar-start">
-              <!--
+              <!-- change language
               <div class="navbar-item has-dropdown is-hoverable"><a class="navbar-link">Language</a>
                 <div class="navbar-dropdown">
                   <a class="navbar-item navbar-item-dropdown" href="#">English</a>
@@ -23,10 +30,12 @@
             <div class="navbar-end">
               <router-link class="navbar-item"  to="/booking">My bookings</router-link>               
               <router-link class="navbar-item"  to="/Help">How does it work</router-link>
-              <div class="navbar-item">                
-                <p v-show="user.email" class="loginEmail">Logged in as<br>{{ user.email }}</p>   
+              <div class="navbar-item">                                                
+                <small v-if="!rememberEnded && user.remember"><a @click.prevent="endRemember">Forget me on this device</a></small>
+                <small v-if="rememberEnded && user.remember">{{ rememberEnded }}</small>
+                <p v-show="user.email" class="loginEmail">Logged in as<br>{{ user.email }}</p>
                 <div class="buttons">                  
-                  <!--<a v-show="user.email" class="button is-light" href="#" @click.prevent="logout()">Log out</a>-->
+                  <a v-show="user.email" class="button is-light" href="#" @click.prevent="logout()">Log out</a>
                   <router-link v-show="!user.email" class="button is-light" to="/Register">Register</router-link>
                   <router-link v-show="!user.email" class="button is-light" to="/Login">Login</router-link>
                 </div>                
@@ -37,11 +46,31 @@
       </nav>
     </div>
     <router-view/>
-    <footer>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></footer>
-    
-    <br><br>
-    <small v-if="!rememberEnded"><a @click.prevent="endRemember">Forget me on this machine</a></small>
-    <p v-if="rememberEnded">{{ rememberEnded }}</p>
+    <footer>
+      Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a>
+    </footer>
+    <!-- loader 
+    <div class="loader-wrapper">
+      <div class="loader is-loading"></div>
+    </div>-->
+
+    <!--  for debugging: 
+    <div id="debuggingView">
+      DEBUGGING VIEW<br><br>
+      user: {{ user }}<br><br>
+      house: {{ house }}<br><br>
+      <span v-if="this.$route.path == '/booking'">
+        machines: {{ machines }}<br><br>
+        user.id: {{ user.id}}<br><br><br>
+        selectedDay: {{ selectedDay }}<br><br>
+        slots: {{ slots }}<br><br>
+        bookings: {{ bookings }}<br><br>
+        calendarDates: {{ calendarDates }}<br> <br>         
+        currentHour: {{ currentHour }}
+      </span> 
+    </div>-->
+
+
   </div>
 </template>
 
@@ -52,12 +81,17 @@ export default {
   data() {
     return {
       userEmail: null,
-      rememberEnded: false
+      rememberEnded: false,
+      machines: [], /* remove these */
+      selectedDay: null,
+      slots: [],
+      calendarDates: [],
+      currentHour: null
     };
   },
   methods: {
     logout: function() {
-     
+      location.reload();
     },
     endRemember: function() {
       localStorage.removeItem("remember");
@@ -73,6 +107,7 @@ export default {
 </script>
 
 <style>
+/* all apps styles are here */
 html, body {
     height:100%;
     background-color: #00aaf0;
@@ -104,13 +139,18 @@ html, body {
   font-weight: 600;
   font-family: 'Baloo', cursive;
 }
+.navbar-item small {
+  font-size: .5em;
+  margin: 25px;
+  width: 100px;
+}
 #logo {
    color: #fff;
    font-size: 4.4rem;
    margin-top: 28px;
 }
 .navbar-item, .navbar-link {
-    color: #1b68be; /* #ffe47c; */
+    color: #1b68be; 
     font-size: 1.3em;
     font-weight: 600;
     height: 30px;
@@ -123,28 +163,23 @@ html, body {
   color: #f5f5f5;
 }
 .title, .subtitle {
-    color: #fcfcfc; /* #ffe681; */
+    color: #fcfcfc;
 }
 .subtitle.is-3 {
     font-size: 1.6rem;
     font-weight: 600;
-    margin: 30px 0 0 0;
+    margin: 10px 0 0 0;
 }
 .button.is-primary, .tags span {
     background-color: #2ed185;
     color: #fff;
     font-weight: 600;
 }
-/*
-.input, .select select {
-  height: 44px;
-} */
 label {
   color: #fff;
 }
 #booking .tags .bookingTag {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  /* color: #ffe681; */
   padding: 22px 4px;
 }
 #booking .tags .tag, .wide {
@@ -173,6 +208,9 @@ svg.fa-clock {
   border: none;
   background-color: transparent !important;
   color: #fff;
+}
+.iconButton span label:hover {
+  cursor: pointer;
 }
 #registration .iconButton {
   float: right;
@@ -205,12 +243,16 @@ svg.fa-clock {
   background-color: #d9eaf0 !important;
   font-weight: 100;
 }
-/* last child btn/tag fixes */
+/* last child btn/tag fix */
 .buttons .button:last-child:not(.is-fullwidth) {
     margin-right: .5rem;
 }
 span.is-passedTime, .button.is-passedTime {
   opacity: .1;
+}
+#clickXToDeleteText {
+  margin: -20px 0 20px 0;
+    color: #2C3E50;
 }
 .tags .tag {
     margin-right: .5rem;
@@ -249,13 +291,19 @@ input.exceedTextLength, textarea.exceedTextLength, select.exceedTextLength {
   color: #4d4d4d;
 }
 .slotTimesExtraText {
-  clear: left;
-  float: left;
+  clear: left !important;
+  float: left !important;
 }
 footer {
   flex-grow: 1;
+    position: fixed; 
+    bottom:0%;
+    width:100%; 
+    background-color: #044d9e; 
+    color: #6392dd;
+    opacity: 1;
+    font-size: .8rem;
 } 
-/* temporary */
 .navbar-burger {
   display: none;
 }
@@ -264,6 +312,7 @@ footer {
 }
 #management .level-left {
   float: left !important;
+  margin-right: 10px;
 }
 #management .level-right {
   float: right !important;
@@ -273,12 +322,6 @@ footer {
   margin-top: 22px; 
 }
 .moreInfo {
-  /*
-    float: right;
-    margin-top: -42px;
-    border: none;
-    padding: 0 !important;
-    width: 38px; */
     float: right;
     margin: -37px 4px 0 0;
     border: none;
@@ -309,11 +352,74 @@ ul li {
 .button.moreInfo:focus:not(:active) {
   box-shadow: none;
 }
-/* end time fix on mobile */
-@media only screen and (max-width: 690px) {
-  #booking .level-right {
+#info {
+  margin: 300px;
+}
+.loader-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: #000;
+    z-index: 9999;
+    transition: opacity .3s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 6px;
+    opacity: .5;
+}
+.loader-wrapper .loader {
+    height: 80px;
+    width: 80px;
+}
+#debuggingView {
+  font-size: .8rem;
+  background-color: #000;
+  color: #888;
+  padding: 20px;
+  text-align: left;
+}
+/* --------------------------- responsive styles ------------------------------ */
+@media only screen and (max-width: 700px) {
+  .navbar-burger {
+    display: inline;
+  }
+  .title, .subtitle.is-3 {
+    font-size: 1.2rem;
+  }
+  #management .level-right {
     float: left !important;
     clear: left !important;
+  }
+}
+@media only screen and (max-width: 300px) {  
+  .section {
+    padding: .3rem .2rem;
+  }
+  .navbar-brand {
+    height: 50px;
+  }
+  .navbar-brand img {
+    width: 40px;
+    height: 40px;
+    margin-left: 20px;
+
+  }
+  #logo {
+    font-size: 1.8rem;
+    margin-top: 8px;
+  }
+  .bookingTag, 
+  #booking .button.is-primary, 
+  #booking .button.is-danger, 
+  #booking .button.is-warning,
+  #booking .is-passedTime {
+    width: 100% !important;       
+  } 
+  #management .level-right {
+    margin-top: 1rem !important;
   }
 }
 </style>

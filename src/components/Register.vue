@@ -3,20 +3,19 @@
     <section class="section">
       <div class="container has-text-centered">
 
-          <h2 class="title">Register</h2> 
-          code: {{ code }}<br>
-          house: {{ house }}<br>
-          user: {{ user }}<br>
-          <small>How to test this webapp: <br>1. Use ADMXXX to register as house manager, write down the given registration code. <br> 2. Logout and then use the code that was given to register as regular user.</small>
+          <h2 class="title">Register</h2>
+          <br>
+          <small>How to test this webapp: <br>1. Use ADM123 to register as house manager, write down the given registration code. <br> 2. Logout and then use the code that was given to register as regular user.</small>
           <br><br><br>
           
           <div class="columns is-centered">
             <div class="column is-5 is-3-desktop">
-                                  
-              <!-- error message -->
-              <div v-show="errorMsg != ''" class="notification is-danger">                
-                <strong>{{ errorMsg }}</strong>
-              </div>
+              <form>
+                                      
+                <!-- error message -->
+                <div v-show="errorMsg != ''" class="notification is-danger">                
+                  <strong>{{ errorMsg }}</strong>
+                </div>
                 
                   <span v-show="!codeAccepted">
                     <!-- code -->
@@ -45,7 +44,7 @@
                     <span v-if="isAdmin"><p>Welcome to register as house manager!</p></span>
                     <span v-else><p>Welcome to register as laundry room user!</p></span>
 
-                    <!-- name -->
+                    <!-- name 
                     <div v-show="!isAdmin" class="field">
                       <div class="control">
                         <label for="name">Name</label>
@@ -56,9 +55,9 @@
                           v-model="newUser.name"
                         />
                       </div>
-                    </div>
+                    </div>-->
                     
-                    <!-- apartment number -->
+                    <!-- apartment number 
                     <div v-show="!isAdmin" class="field">
                       <div class="control">
                         <label for="aptNumber">Apartment number</label>
@@ -69,7 +68,7 @@
                           v-model="newUser.aptNumber"
                         />
                       </div>
-                    </div>
+                    </div>-->
 
                     <!-- email -->  
                     <div class="field">
@@ -127,7 +126,7 @@
                       </p>
                     </div>  -->
                     
-                    <!-- remember --> 
+                    <!-- remember
                     <div class="field">
                       <div class="control">
                         <label class="checkbox">
@@ -135,7 +134,7 @@
                           Remember me
                         </label>
                       </div>
-                    </div>
+                    </div> --> 
 
                     <!-- register btn -->  
                     <div class="field">
@@ -176,11 +175,11 @@ export default {
       newUser: {
         houseId: -1,
         isAdmin: 0,
-        name: 'Tester', /* CHANGE TO '' */
-        email: 'test9087654@sdfghjk.com', /* CHANGE TO null */
-        password: 'qwer1234', /* CHANGE TO null */
+        name: '', 
+        email: null,
+        password: null,
         remember: false,     
-        aptNumber: '987', /* CHANGE TO '' */
+        aptNumber: ''
       },
       tr: null,
       passwordHelper: false,
@@ -250,39 +249,37 @@ export default {
       }
     },
     // after saveUser() code execution continues here
-    user:function() {
-      if (this.user === undefined || this.user.length == 0) { 
-        this.errorMsg = 'Please check your input data';
-      } else {        
-        if(this.user.id == 'userExists') {
-          // email exists already in DB
-          this.errorMsg = 'Error, email exists already';
-          this.newUser = [];
-          console.log('Email exists already');
+    user: function() {
+      //handler() {
+        if(this.user === undefined || this.user.length == 0) {
+          this.errorMsg = 'Please check your input data';
         } else {
-          // user save successful
-          console.log('2 User saved - this.user:', this.user);
-          if(this.isAdmin != 1) {  this.user.houseId = this.house.id; } // NEW2
-          if (this.user.remember != '') {
-            // save into local storage
-            localStorage.setItem("remember", this.user.remember);
-            console.log('saved to local storage: ', this.user.remember);
-          }
-          // forward to next page
-          if(this.isAdmin) {
-            // user is house admin
-            this.newUser.isAdmin = this.isAdmin;        
-            this.$router.replace({name: 'management'});
+          // not in use yet
+          if(this.user.id == 'userExists') {
+            this.errorMsg = 'Email exists already';
           } else {
-            // user is tenant
-            this.$router.push({ path: '/booking' });
+            // user save successful
+            if(this.isAdmin != 1) {  this.user.houseId = this.house.id; }
+            if(this.user.remember != '') {
+              // save into local storage
+              localStorage.setItem("remember", this.user.remember);
+              console.log('saved to local storage: ', this.user.remember);
+            }
+            // forward to next 
+            if(this.isAdmin) {
+              // user is house admin
+              this.newUser.isAdmin = this.isAdmin;        
+              this.$router.replace({name: 'management'});
+            } else {
+              // user is tenant
+              this.$router.push({ path: '/booking' });
+            }
           }
         }
-      }
-    },
+      //} // handler      
+    }, // user
     // reset error message after 5 seconds
     errorMsg:function() {
-      console.log('watch errorMsg');
       var self = this;
       if(this.errorMsg != '') {
         setTimeout(function() {
@@ -292,7 +289,7 @@ export default {
     }
   },                  
   created() {
-    this.getCode('00');
+    this.getCode('00'); // init 
   },
   computed: mapGetters(["user", "code", "house"])
 };

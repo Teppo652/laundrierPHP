@@ -4,8 +4,6 @@
         <div class="container has-text-centered">
 
           <h2 class="title">Login</h2>
-          user: {{ user }}<br>
-          house: {{ house }}<br>
 
           <div class="columns is-centered">
             <div class="column is-5 is-3-desktop">              
@@ -14,10 +12,10 @@
                 <div v-if="error" class="alert alert-danger">{{error}}</div> -->
 
                 <!-- error msg --> 
-                <div v-show="error" class="field">
+                <div v-show="errorMsg" class="field">
                   <div class="control">
                       <div class="notification is-danger">
-                        {{error}}
+                        {{errorMsg}}
                       </div>
                   </div>
                 </div>
@@ -38,22 +36,7 @@
                   />
                   </div>
                 </div>
-
-                <!-- password  
-                <div class="field">
-                  <div class="control">
-                    <label for="password">Password</label>
-                    <input id="password"
-                      type="password"
-                      class="input" 
-                      name="password"
-                      value="test"
-                      required
-                      placeholder="Password"
-                      v-model="lUser.password"
-                    />
-                  </div>
-                </div>-->
+                
                 <!-- password -->  
                 <div class="field">
                   <p class="control has-addons">
@@ -82,7 +65,7 @@
                   </ul>
                 </div>
 
-                <!-- remember --> 
+                <!-- remember user on this machine 
                 <div class="field">
                   <div class="control">
                     <label class="checkbox">
@@ -90,26 +73,20 @@
                       Remember me
                     </label>
                   </div>
-                </div>
+                </div> --> 
 
-
-
-                <!-- login btn        :disabled="form.email == null || form.password.length == null"      -->  
+                <!-- login btn -->  
                 <div class="field">
                   <div class="control">
                     <button 
                         class="button is-primary is-fullwidth"
                         @click.prevent="login()">Login</button>
-
-                        
-
                   </div>
                 </div>
 
                 <small>
                   <router-link class="has-text-light has-text-centered" to="/Register">Did you mean to register?</router-link>
                 </small>
-
 
               </form>
 
@@ -128,17 +105,17 @@ export default {
         data() {
             return {
               lUser: {
-                email: "tester@test.com",
-                password: "salasana",
+                email: '',
+                password: '',
                 remember: false
               },
-              error: null,
+              errorMsg: null,
               passwordHelper: false
             }
         },
         methods: {
           login() {
-            console.log('Login this.error:', this.error);
+            console.log('Login this.errorMsg:', this.errorMsg);
             console.log('Login this.lUser:', this.lUser);
             this.lUser.email = this.lUser.email.trim();
             this.lUser.password = this.lUser.password.trim();
@@ -153,28 +130,25 @@ export default {
             } else {
               this.errorMsg = 'Please check email';
             }
-
-            // if validated
-             
           },
           ...mapActions(["loginUser", "getHouseData"])
         }, // end methods
         watch: {
           // after loginUser() code execution continues here
-          user() {
+          user: function() {
             console.log('user watch - this.user:', this.user);
             if (this.user === undefined || this.user.length == 0) { 
-              this.error = 'Please check your email and password';
+              this.errorMsg = 'User not found with this email and password';
             } else {
               console.log('user found - this.user:', this.user);
+               // if user checked remember, loginUser() returned encrypted userId (remember)
                if (this.user.remember != '') {
-                // save into local storage
-                localStorage.setItem("remember", this.user.remember);
-                console.log('saved to local storage: ', this.user.remember);
+                // save in local storage
+                localStorage.setItem("remember", this.user.remember); 
+                console.log('saved to local storage');
               }
               let arr = [this.user.houseId, '-1'];
               this.getHouseData(arr);
-              this.$router.replace({name: 'booking'});
             }
           },
           // after getHouseData() code execution continues here
@@ -182,23 +156,36 @@ export default {
             console.log('house watch - this.house:', this.house);
             // if (this.house.length>0) {
             if (this.house === undefined || this.house.length == 0) {
-              this.error = 'Oh no! - Unfortunately the Laundry room you are registered to could not be found, please contact your house management.';
+              this.errorMsg = 'Oh no! - The Laundry room you are registered to could not be found, please contact your house management.';
               console.log('no house found');
             } else {
-            // house was found with code
-              console.log('house found');
-            //this.user.houseId = this.house.id
+            // house was found with registration code
+            console.log('house found');
             this.isAdmin = false;
             this.codeAccepted = true;
+            this.$router.replace({name: 'booking'});
             } 
+          },
+          // reset error message after 5 seconds
+          errorMsg:function() {
+            var self = this;
+            if(this.errorMsg != '') {
+              setTimeout(function() {
+                  self.errorMsg = '';
+              }, 5000);
+            }
           }
         },               
         created() {
-          let remember = localStorage.getItem("remember");
-          if(remember) {
-            console.log('remember:', remember);
+          // try read userId from local storage
+          /*
+          let userId = localStorage.getItem("remember");
+          if(userId) {
+            console.log('Logging in using userId found in localStorage:', userId);
+            this.lUser.id = parseInt(userId);
             this.loginUser(this.lUser); // if local storage string found - redirect to booking
           }
+          */
         },
         computed: mapGetters(["user", "house"])      
 };
